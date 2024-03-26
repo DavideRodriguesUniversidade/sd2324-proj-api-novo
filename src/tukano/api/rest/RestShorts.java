@@ -24,10 +24,7 @@ public interface RestShorts {
 	String SHORT_ID = "shortId";
 	
 	String PWD = "pwd";
-
-	String LIKE = "/like";
-	String FOLLOW = "/follow";
-
+	
 	String LIKES = "/likes";
 	String SHORTS = "/shorts";
 	String FOLLOWERS = "/followers";
