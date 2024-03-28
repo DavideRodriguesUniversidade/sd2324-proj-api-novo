@@ -6,7 +6,6 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -24,9 +23,7 @@ public interface RestShorts {
 	String SHORT_ID = "shortId";
 	
 	String PWD = "pwd";
-
-	String LIKE = "/like";
-	String FOLLOW = "/follow";
+	String FEED = "/feed";
 
 	String LIKES = "/likes";
 	String SHORTS = "/shorts";
@@ -57,7 +54,7 @@ public interface RestShorts {
 	void follow(@PathParam(USER_ID1) String userId1, @PathParam(USER_ID2) String userId2, boolean isFollowing, @QueryParam(PWD) String password);
 
 	@GET
-	@Path("/{" + USER_ID + "}")
+	@Path("/{" + USER_ID + "}" + FOLLOWERS )
 	@Produces(MediaType.APPLICATION_JSON)
 	List<String> followers(@PathParam(USER_ID) String userId, @QueryParam(PWD) String password);
 
@@ -68,9 +65,11 @@ public interface RestShorts {
 
 	@GET
 	@Path("/{" + SHORT_ID + "}" + LIKES )
+	@Produces(MediaType.APPLICATION_JSON)
 	List<String> likes(@PathParam(SHORT_ID) String shortId, @QueryParam(PWD) String password);
 
 	@GET
-	@Path("/{" + USER_ID + "}")
+	@Path("/{" + USER_ID + "}" + FEED )
+	@Produces(MediaType.APPLICATION_JSON)
 	List<String> getFeed( @PathParam(USER_ID) String userId, @QueryParam(PWD) String password);
 }

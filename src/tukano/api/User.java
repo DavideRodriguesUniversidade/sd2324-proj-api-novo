@@ -1,10 +1,15 @@
 package tukano.api;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
+@Entity
 public class User {
 	
-	private String pwd;
-	private String email;
+	@Id
 	private String userId;
+	private String pwd;
+	private String email;	
 	private String displayName;
 
 	public User() {}
@@ -60,5 +65,9 @@ public class User {
 	@Override
 	public String toString() {
 		return "User [userId=" + userId + ", pwd=" + pwd + ", email=" + email + ", displayName=" + displayName + "]";
+	}
+	
+	public User copy() {
+		return new User(userId, "", email, displayName);
 	}
 }
