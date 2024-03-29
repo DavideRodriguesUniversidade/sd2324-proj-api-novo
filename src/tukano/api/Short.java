@@ -33,6 +33,10 @@ public class Short {
 		this.totalLikes = totalLikes;
 	}
 
+	public Short(String shortId, String ownerId, String blobUrl) {
+		this( shortId, ownerId, blobUrl, System.currentTimeMillis(), 0);
+	}
+	
 	public String getShortId() {
 		return shortId;
 	}
@@ -73,5 +77,13 @@ public class Short {
 		this.totalLikes = totalLikes;
 	}
 
-
+	@Override
+	public String toString() {
+		return "Short [shortId=" + shortId + ", ownerId=" + ownerId + ", blobUrl=" + blobUrl + ", timestamp="
+				+ timestamp + ", totalLikes=" + totalLikes + "]";
+	}
+	
+	public Short copyWith( long totLikes ) {
+		return new Short( shortId, ownerId, blobUrl, timestamp, (int)totLikes);
+	}
 }

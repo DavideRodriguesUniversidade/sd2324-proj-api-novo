@@ -24,6 +24,7 @@ public interface RestShorts {
 	
 	String PWD = "pwd";
 	String FEED = "/feed";
+
 	String LIKES = "/likes";
 	String SHORTS = "/shorts";
 	String FOLLOWERS = "/followers";

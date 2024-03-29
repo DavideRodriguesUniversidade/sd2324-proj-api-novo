@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_package = "tukano.impl.grpc.generated_java";
+option java_outer_classname = "BlobsProtoBuf";
+
+service Blobs {
+
+	rpc upload( UploadArgs ) returns (UploadResult) {}
+
+	rpc download( DownloadArgs ) returns (stream DownloadResult) {}
+	
+}
+
+message UploadArgs {
+	 string blobId = 1;
+	 bytes data = 2;
+}
+
+message UploadResult {
+}
+
+message DownloadArgs {
+	 string blobId = 1;
+}
+
+message DownloadResult {
+	bytes chunk = 1;
+}
