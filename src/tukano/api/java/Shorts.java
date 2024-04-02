@@ -106,7 +106,7 @@ public interface Shorts {
 	 * 
 	 * @param shortId the identifier of the short
 	 * @param password the password of the owner of the short
-	 * @return (OK,Boolean), 
+	 * @return (OK,List<String>|empty list), 
 	 * NOT_FOUND if there is no Short with the given shortId
 	 * FORBIDDEN if the password is incorrect
 	 */
@@ -119,7 +119,7 @@ public interface Shorts {
 	 * 
 	 * @param userId user of the requested feed
 	 * @param password the password of the user
-	 * @return (OK,List<PostId>|empty list)
+	 * @return (OK,List<String>|empty list)
 	 * 	NOT_FOUND if the user does not exists
 	 *  FORBIDDEN if the password is incorrect
 	 */
