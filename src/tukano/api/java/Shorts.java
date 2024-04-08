@@ -47,7 +47,7 @@ public interface Shorts {
 	/**
 	 * Retrieves a given Short.
 	 * 
-	 * @param shortId the unique identifier of the short to be deleted
+	 * @param shortId the unique identifier of the short to be retrieved
 	 * @return (OK,Short), 
 	 * 	NOT_FOUND if shortId does not match an existing short
 	 */
@@ -55,7 +55,7 @@ public interface Shorts {
 	
 	
 	/**
-	 * Retrieves the list of identifiers of the shorts created by the given user, with its total likes count updated.
+	 * Retrieves the list of identifiers of the shorts created by the given user.
 	 * 
 	 * @param userId the user that owns the requested shorts
 	 * @return (OK, List<String>|empty list) or NOT_FOUND if the user does not exist
@@ -78,7 +78,7 @@ public interface Shorts {
 	Result<Void> follow(String userId1, String userId2, boolean isFollowing, String password);	
 
 	/**
-	 * Retrieves the lost of users following a given user
+	 * Retrieves the list of users following a given user
 	 * @param userId - the followed user
 	 * @param password - the password of the followed user
 	 * @return (OK, List<String>|empty list) the list of users that follow another user, or empty if the user has no followers 
