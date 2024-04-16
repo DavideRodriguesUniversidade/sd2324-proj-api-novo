@@ -61,4 +61,5 @@ public interface Users {
 	 *         BAD_REQUEST - otherwise.
 	 */
 	Result<List<User>> searchUsers(String pattern);	
+	
 }

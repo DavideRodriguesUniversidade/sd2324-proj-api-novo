@@ -1,11 +1,23 @@
 package tukano.api;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.*;
+
+@Entity
 public class User {
+	
+	@Id
+	private String userId;
+	
 	
 	private String pwd;
 	private String email;
-	private String userId;
 	private String displayName;
+	
+   // private Set<User> followedUsers = new HashSet<>();
+
 
 	public User() {}
 	
@@ -61,4 +73,17 @@ public class User {
 	public String toString() {
 		return "User [userId=" + userId + ", pwd=" + pwd + ", email=" + email + ", displayName=" + displayName + "]";
 	}
+	
+	/*public void addFollowedUser(User user) {
+        followedUsers.add(user);
+    }
+
+    public void removeFollowedUser(User user) {
+        followedUsers.remove(user);
+    }
+
+    public Set<User> getFollowedUsers() {
+        return followedUsers;
+    }*/
+	
 }

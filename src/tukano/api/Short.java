@@ -2,6 +2,7 @@ package tukano.api;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 /**
  * Represents a Short video uploaded by an user.
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
  *
  */
 @Entity
+@Table(name = "shorts")
 public class Short {
 	
 	@Id
