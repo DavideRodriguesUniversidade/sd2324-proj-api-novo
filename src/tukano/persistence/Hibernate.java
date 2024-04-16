@@ -9,6 +9,7 @@ import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 
 import tukano.api.User;
+import tukano.api.Follow;
 import tukano.api.Short;
 
 import java.util.logging.Logger;
@@ -129,6 +130,11 @@ public class Hibernate {
     public void deleteUser(User user) {
         delete(user);
     }
+    
+    public void persistFollow(Follow follow) {
+        persist(follow);
+    }
+
 
     public List<Short> getAllShorts() {
         return jpql("SELECT s FROM Short s", Short.class);

@@ -22,5 +22,7 @@
         <property name="hibernate.dbcp.maxWaitMillis">-1</property>
         <!-- Mapping for User entity -->
         <mapping class="tukano.api.User" />
+        <!-- Mapping for Short entity -->
+        <mapping class="tukano.api.Short" />
     </session-factory>
 </hibernate-configuration>

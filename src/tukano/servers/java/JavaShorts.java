@@ -1,24 +1,16 @@
 package tukano.servers.java;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import tukano.api.java.Result;
 import tukano.api.java.Result.ErrorCode;
+import tukano.api.Follow;
 import tukano.api.Short;
 import tukano.api.User;
 import tukano.api.factory.UsersClientFactory;
-import tukano.api.factory.UsersShortsFactory;
 import tukano.api.java.Shorts;
 import tukano.api.java.Users;
 import tukano.persistence.Hibernate;
@@ -123,81 +115,50 @@ public class JavaShorts implements Shorts {
     public Result<Void> follow(String userId1, String userId2, boolean isFollowing, String password) {
         Log.info("follow : userId1 = " + userId1 + ", userId2 = " + userId2 + ", isFollowing = " + isFollowing);
 
-        // Check if userId1 and userId2 are valid
+        // Check if userId1, userId2, or password are null
         if (userId1 == null || userId2 == null || password == null) {
-            Log.info("userId1, userId2 or Password null.");
+            Log.info("userId1, userId2, or Password null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
 
-        // Retrieve the users from the database using Hibernate
-        Result<User> user1Result = getUser(userId1);
-        Result<User> user2Result = getUser(userId2);
-        
-        if (!user1Result.isOK() || !user2Result.isOK()) {
+        try {
+            Users usersClient = UsersClientFactory.getClient();
+
+            // Retrieve user details via GET request
+            Result<User> userResult1 = usersClient.getUser(userId1, password);
+            Result<User> userResult2 = usersClient.getUser(userId2, password);
+
+            // Check if users exist and password is correct
+            if (!userResult1.isOK() || !userResult2.isOK()) {
+                Log.info("User retrieval failed or incorrect password.");
+                return Result.error(ErrorCode.NOT_FOUND);
+            }
+
+            // Create or update the Follow relationship based on isFollowing flag
+            Follow follow = new Follow(userId1, userId2, isFollowing);
+            Hibernate hibernate = Hibernate.getInstance();
+            hibernate.persistFollow(follow);
+
+            return Result.ok(null);
+        } catch (Exception ce) {
+            Log.severe("Connection refused: " + ce.getMessage());
+            ce.printStackTrace();
             return Result.error(ErrorCode.INTERNAL_ERROR);
         }
-        
-        User user1 = user1Result.value();
-        User user2 = user2Result.value();
-
-        // Check if the follow relationship already exists
-      /*  if (isFollowing(user1, user2) && isFollowing) {
-            Log.info("Already following.");
-            return Result.error(ErrorCode.CONFLICT);
-        }*/
-
-        // Update the follow relationship using Hibernate
-       /* if (isFollowing) {
-            user1.addFollowedUser(user2);
-            hibernate.updateUser(user1);
-        } else {
-            user1.removeFollowedUser(user2);
-            hibernate.updateUser(user1);
-        }*/
-
-        return Result.ok(null);
     }
 
-    /*private boolean isFollowing(User follower, User followed) {
-        return follower.getFollowedUsers().contains(followed);
-    }*/
 
-    private Result<User> getUser(String userId) {
-    	Hibernate hibernate = Hibernate.getInstance();
-        List<User> users = hibernate.jpql("SELECT u FROM User u WHERE u.userId = :userId", User.class);
-        if (users.isEmpty()) {
-            return Result.error(ErrorCode.NOT_FOUND);
-        }
-        return Result.ok(users.get(0));
-    }
+
+
+
 
     @Override
-    public Result<List<String>> followers(String userId, String password) {
-        Log.info("followers : userId = " + userId);
+	public Result<List<String>> followers(String userId, String password) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-        // Check if userId is valid
-        if (userId == null || password == null) {
-            Log.info("userId or Password null.");
-            return Result.error(ErrorCode.BAD_REQUEST);
-        }
 
-        // Retrieve the followers for the user from the database using Hibernate
-        Result<User> userResult = getUser(userId);
-        
-        if (!userResult.isOK()) {
-            return Result.error(ErrorCode.BAD_REQUEST);
-        }
-
-        User user = userResult.value();
-
-        // Retrieve the followers' IDs
-        /*List<String> userFollowers = user.getFollowedUsers().stream()
-                .map(User::getUserId)
-                .sorted()
-                .collect(Collectors.toList());*/
-
-        return Result.ok();
-    }
 
 
     @Override
@@ -328,4 +289,5 @@ public class JavaShorts implements Shorts {
     private String generateUniqueShortId() {
         return java.util.UUID.randomUUID().toString();
     }
+
 }

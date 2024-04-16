@@ -80,7 +80,7 @@ public class JavaUsers implements Users {
         
         try {
             Discovery discovery = Discovery.getInstance();
-            discovery.announce("users", "http://172.18.0.4:3546/rest");  
+            discovery.announce("users", "http://172.18.0.3:3546/rest");  
         } catch (Exception e) {
             Log.info("Failed to announce user details.");
             e.printStackTrace();
