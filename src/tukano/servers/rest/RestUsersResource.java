@@ -3,6 +3,7 @@ package tukano.servers.rest;
 import java.util.List;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tukano.api.java.Result;

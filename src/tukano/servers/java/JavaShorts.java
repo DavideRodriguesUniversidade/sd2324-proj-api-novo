@@ -45,7 +45,7 @@ public class JavaShorts implements Shorts {
 
             String shortId = generateUniqueShortId();
             
-            String blobUrl = "http://172.18.0.6:5678/rest";
+            String blobUrl = "";
 
             // Create a new short
             Short newShort = new Short(shortId, userId, blobUrl);

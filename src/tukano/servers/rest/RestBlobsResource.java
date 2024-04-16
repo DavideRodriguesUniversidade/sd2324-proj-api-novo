@@ -19,14 +19,17 @@ public class RestBlobsResource {
         this.impl = new JavaBlobs();
     }
 
+    
     public Result<Void> upload(String blobId, byte[] bytes) {
         return resultOrThrow(impl.upload(blobId, bytes));
     }
 
+    
     public Result<byte[]> download(String blobId) {
         return resultOrThrow(impl.download(blobId));
     }
 
+    
     public Result<Void> downloadToSink(String blobId, Consumer<byte[]> sink) {
         return resultOrThrow(impl.downloadToSink(blobId, sink));
     }

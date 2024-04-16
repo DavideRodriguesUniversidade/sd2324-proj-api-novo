@@ -39,10 +39,7 @@ public class JavaUsers implements Users {
 
         // Persist the new user
         try {
-            hibernate.persistUser(user);
-            
-            Discovery discovery = Discovery.getInstance();
-            discovery.announce("users", "http://172.18.0.4:3546/rest");  
+            hibernate.persistUser(user); 
             
         } catch (Exception e) {
             Log.info("Failed to persist user.");

@@ -23,11 +23,8 @@ public class RestBlobsServer {
     public static final String SERVICE = "blobs";
     
     public static void main(String[] args) {
-        List<String> ips = List.of("172.18.0.5", "172.18.0.6");
-        
-        for(String ip : ips) {
-            startServer(ip);
-        }
+    	startServer("172.18.0.5");
+        startServer("172.18.0.6");
     }
     
     private static void startServer(String ip) {
