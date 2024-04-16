@@ -274,22 +274,23 @@ public class JavaShorts implements Shorts {
             return Result.error(ErrorCode.FORBIDDEN);
         }
 
-        // Get the list of followers for the given userId using the followers() method
-        Result<List<String>> followersResult = followers(userId, password);
-        if (!followersResult.isOK()) {
-            Log.info("Failed to retrieve followers.");
-            return Result.error(followersResult.error());
+        // Query the database to get the list of users that the given userId follows
+        List<String> following = hibernate.jpql("SELECT f.followedId FROM Follow f WHERE f.followerId = '" + userId + "'", String.class);
+
+        // Add userId to include their own shorts in the feed
+        following.add(userId);
+
+        // If following list is empty, return an empty feed
+        if (following.isEmpty()) {
+            Log.info("No users followed by userId: " + userId);
+            return Result.ok(Collections.emptyList());
         }
-        List<String> followers = followersResult.value();
 
-        // Add userId to the followers list to include their own shorts in the feed
-        followers.add(userId);
-
-        // Query the database to get the list of shorts for the followers
+        // Query the database to get the list of shorts for the users that userId follows
         List<Short> shortsList = new ArrayList<>();
-        for (String followerId : followers) {
-            List<Short> followerShorts = hibernate.jpql("SELECT s FROM Short s WHERE s.ownerId = '" + followerId + "'", Short.class);
-            shortsList.addAll(followerShorts);
+        for (String followingId : following) {
+            List<Short> userShorts = hibernate.jpql("SELECT s FROM Short s WHERE s.ownerId = '" + followingId + "'", Short.class);
+            shortsList.addAll(userShorts);
         }
 
         // Sort the shorts by timestamp (age) in descending order
@@ -305,13 +306,6 @@ public class JavaShorts implements Shorts {
 
         return Result.ok(feed);
     }
-
-
-
-
-
-
-
 
 
 

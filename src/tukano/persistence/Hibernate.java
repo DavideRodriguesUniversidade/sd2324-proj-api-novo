@@ -2,6 +2,7 @@ package tukano.persistence;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -135,7 +136,6 @@ public class Hibernate {
         persist(follow);
     }
 
-
     public List<Short> getAllShorts() {
         return jpql("SELECT s FROM Short s", Short.class);
     }
@@ -147,4 +147,22 @@ public class Hibernate {
 	public SessionFactory getSessionFactory() {
 		return sessionFactory;
 	}
+
+	public <T> List<T> jpql(String jpqlStatement, Class<T> clazz, Map<String, Object> parameters) {
+		try (var session = sessionFactory.openSession()) {
+			var query = session.createQuery(jpqlStatement, clazz);
+
+			// Set query parameters
+			if (parameters != null) {
+				for (var entry : parameters.entrySet()) {
+					query.setParameter(entry.getKey(), entry.getValue());
+				}
+			}
+
+			return query.list();
+		} catch (Exception e) {
+			throw e;
+		}
+	}
+
 }
