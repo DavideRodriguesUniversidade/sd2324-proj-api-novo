@@ -2,15 +2,18 @@ package tukano.api;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 
 @Entity
+@IdClass(FollowID.class)
 public class Follow {
 
     @Id
-    private String followId; // Combined string of followerId and followedId
-
     private String followerId;
+
+    @Id
     private String followedId;
+
     private boolean isFollowing;
 
     // Constructors, getters, setters
@@ -19,19 +22,10 @@ public class Follow {
     public Follow(String followerId, String followedId, boolean isFollowing) {
         this.followerId = followerId;
         this.followedId = followedId;
-        this.followId = followerId + "-" + followedId;
         this.isFollowing = isFollowing;
     }
 
     // Getters and setters
-    public String getFollowId() {
-        return followId;
-    }
-
-    public void setFollowId(String followId) {
-        this.followId = followId;
-    }
-
     public String getFollowerId() {
         return followerId;
     }

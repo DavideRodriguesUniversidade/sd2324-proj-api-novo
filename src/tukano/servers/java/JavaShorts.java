@@ -1,10 +1,10 @@
 package tukano.servers.java;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.Response;
 import tukano.api.java.Result;
 import tukano.api.java.Result.ErrorCode;
 import tukano.api.Follow;
@@ -115,51 +115,68 @@ public class JavaShorts implements Shorts {
     public Result<Void> follow(String userId1, String userId2, boolean isFollowing, String password) {
         Log.info("follow : userId1 = " + userId1 + ", userId2 = " + userId2 + ", isFollowing = " + isFollowing);
 
-        // Check if userId1, userId2, or password are null
+        // Check if userId1 and userId2 are valid
         if (userId1 == null || userId2 == null || password == null) {
-            Log.info("userId1, userId2, or Password null.");
+            Log.info("userId1, userId2 or Password null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
+        
+        Hibernate hibernate = Hibernate.getInstance();
 
-        try {
-            Users usersClient = UsersClientFactory.getClient();
-
-            // Retrieve user details via GET request
-            Result<User> userResult1 = usersClient.getUser(userId1, password);
-            Result<User> userResult2 = usersClient.getUser(userId2, password);
-
-            // Check if users exist and password is correct
-            if (!userResult1.isOK() || !userResult2.isOK()) {
-                Log.info("User retrieval failed or incorrect password.");
-                return Result.error(ErrorCode.NOT_FOUND);
-            }
-
-            // Create or update the Follow relationship based on isFollowing flag
-            Follow follow = new Follow(userId1, userId2, isFollowing);
-            Hibernate hibernate = Hibernate.getInstance();
-            hibernate.persistFollow(follow);
-
-            return Result.ok(null);
-        } catch (Exception ce) {
-            Log.severe("Connection refused: " + ce.getMessage());
-            ce.printStackTrace();
-            return Result.error(ErrorCode.INTERNAL_ERROR);
+        // Check if password is correct for userId1
+        Result<User> userResult1 = UsersClientFactory.getClient().getUser(userId1, password);
+        if (!userResult1.isOK()) {
+            Log.info("User retrieval failed or incorrect password for userId1.");
+            return Result.error(ErrorCode.FORBIDDEN);
         }
+        
+        // Check if the follow relationship already exists
+        List<Follow> existingFollows = hibernate.jpql("SELECT f FROM Follow f WHERE f.followerId = '" + userId1 + "' AND f.followedId = '" + userId2 + "'", Follow.class);
+
+        if (isFollowing && existingFollows.isEmpty()) {
+            // Create a new Follow entity and persist it
+            Follow follow = new Follow(userId1, userId2, isFollowing);
+            hibernate.persistFollow(follow);
+        } else if (isFollowing && !existingFollows.isEmpty()) {
+            // Remove the existing Follow entity
+        	/*Follow follow = existingFollows.get(0);
+            follow.setFollowing(isFollowing);
+            hibernate.persistFollow(follow);*/
+            return Result.error(ErrorCode.CONFLICT);
+        }
+
+        return Result.ok(null);
     }
 
 
-
-
-
-
     @Override
-	public Result<List<String>> followers(String userId, String password) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Result<List<String>> followers(String userId, String password) {
+        Log.info("followers : userId = " + userId);
 
+        // Check if userId and password are valid
+        if (userId == null || password == null) {
+            Log.info("userId or Password null.");
+            return Result.error(ErrorCode.BAD_REQUEST);
+        }
+        
+        Hibernate hibernate = Hibernate.getInstance();
 
+        // Check if password is correct for userId
+        Result<User> userResult = UsersClientFactory.getClient().getUser(userId, password);
+        if (!userResult.isOK()) {
+            Log.info("User retrieval failed or incorrect password.");
+            return Result.error(ErrorCode.FORBIDDEN);
+        }
 
+        // Query the database to get the list of followers for the given userId
+        List<Follow> followerList = hibernate.jpql("SELECT f FROM Follow f WHERE f.followedId = '" + userId + "' AND f.isFollowing = true", Follow.class);
+
+        List<String> followers = followerList.stream()
+                                            .map(Follow::getFollowerId)
+                                            .collect(Collectors.toList());
+
+        return Result.ok(followers);
+    }
 
     @Override
     public Result<Void> like(String shortId, String userId, boolean isLiked, String password) {
@@ -242,45 +259,59 @@ public class JavaShorts implements Shorts {
     public Result<List<String>> getFeed(String userId, String password) {
         Log.info("getFeed : userId = " + userId);
 
-        // Check if userId is valid
+        // Check if userId and password are valid
         if (userId == null || password == null) {
             Log.info("userId or Password null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
+        
+        Hibernate hibernate = Hibernate.getInstance();
 
-        // Validate the user password (You can implement password validation logic here)
-
-        // Retrieve the shorts created by the user
-        Result<List<String>> userShortsResult = getShorts(userId);
-        if (!userShortsResult.isOK()) {
-            return Result.error(ErrorCode.NOT_FOUND);
-        }
-
-        List<String> userShorts = userShortsResult.value();
-
-        // Retrieve the list of users that the given user is following
-        Result<List<String>> followersResult = followers(userId, password);
-        if (!followersResult.isOK()) {
+        // Check if password is correct for userId
+        Result<User> userResult = UsersClientFactory.getClient().getUser(userId, password);
+        if (!userResult.isOK()) {
+            Log.info("User retrieval failed or incorrect password.");
             return Result.error(ErrorCode.FORBIDDEN);
         }
 
-        List<String> followingUsers = followersResult.value();
+        // Get the list of followers for the given userId using the followers() method
+        Result<List<String>> followersResult = followers(userId, password);
+        if (!followersResult.isOK()) {
+            Log.info("Failed to retrieve followers.");
+            return Result.error(followersResult.error());
+        }
+        List<String> followers = followersResult.value();
 
-        // Retrieve the shorts created by the users followed by the user
-        List<String> feed = new ArrayList<>();
+        // Add userId to the followers list to include their own shorts in the feed
+        followers.add(userId);
 
-        for (String followingUserId : followingUsers) {
-            Result<List<String>> followingUserShortsResult = getShorts(followingUserId);
-            if (followingUserShortsResult.isOK()) {
-                feed.addAll(followingUserShortsResult.value());
-            }
+        // Query the database to get the list of shorts for the followers
+        List<Short> shortsList = new ArrayList<>();
+        for (String followerId : followers) {
+            List<Short> followerShorts = hibernate.jpql("SELECT s FROM Short s WHERE s.ownerId = '" + followerId + "'", Short.class);
+            shortsList.addAll(followerShorts);
         }
 
-        // Sort the feed by the age of the shorts (You may need to implement a method to compare the timestamps)
-        // For this example, let's assume the feed is already sorted by the age of the shorts
+        // Sort the shorts by timestamp (age) in descending order
+        shortsList.sort(Comparator.comparing(Short::getTimestamp).reversed());
+
+        // Extract the shortIds from the shortsList
+        List<String> feed = shortsList.stream()
+                                      .map(Short::getShortId)
+                                      .collect(Collectors.toList());
+
+        Log.info("Feed size: " + feed.size()); // Log the size of the feed
+        Log.info("ShortsList size: " + shortsList.size()); // Log the size of the shortsList
 
         return Result.ok(feed);
     }
+
+
+
+
+
+
+
 
 
 

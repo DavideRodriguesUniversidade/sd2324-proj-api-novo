@@ -24,5 +24,9 @@
         <mapping class="tukano.api.User" />
         <!-- Mapping for Short entity -->
         <mapping class="tukano.api.Short" />
+        <!-- Mapping for Follow entity -->
+        <mapping class="tukano.api.Follow" />
+        <!-- Mapping for FollowID entity -->
+        <mapping class="tukano.api.FollowID" />
     </session-factory>
 </hibernate-configuration>
