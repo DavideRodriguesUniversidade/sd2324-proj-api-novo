@@ -1,4 +1,4 @@
-package tukano.shorts.rest;
+package tukano.clients.rest;
 
 import java.net.URI;
 import java.util.List;
@@ -188,4 +188,5 @@ public class RestShortsClient implements Shorts {
             default -> ErrorCode.INTERNAL_ERROR;
         };
     }
+
 }

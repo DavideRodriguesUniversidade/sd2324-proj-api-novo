@@ -1,56 +1,52 @@
 package tukano.servers.rest;
 
-import java.util.function.Consumer;
 
-import jakarta.inject.Singleton;
-import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response.Status;
-import tukano.api.java.Result;
+import jakarta.ws.rs.core.Response;
 import tukano.api.java.Blobs;
+import tukano.api.java.Result;
+import tukano.api.rest.RestBlobs;
 import tukano.servers.java.JavaBlobs;
+import jakarta.inject.Singleton;
 
 @Singleton
-public class RestBlobsResource {
-
+public class RestBlobsResource implements RestBlobs {
     final Blobs impl;
 
     public RestBlobsResource() {
         this.impl = new JavaBlobs();
     }
 
-    
-    public Result<Void> upload(String blobId, byte[] bytes) {
-        return resultOrThrow(impl.upload(blobId, bytes));
+    @Override
+    public void upload(String blobId, byte[] bytes){
+     resultOrThrow(impl.upload(blobId,bytes));
     }
 
-    
-    public Result<byte[]> download(String blobId) {
+    @Override
+    public byte[] download(String blobId){
         return resultOrThrow(impl.download(blobId));
     }
 
-    
-    public Result<Void> downloadToSink(String blobId, Consumer<byte[]> sink) {
-        return resultOrThrow(impl.downloadToSink(blobId, sink));
-    }
-
-    protected <T> Result<T> resultOrThrow(Result<T> result) {
+    protected <T> T resultOrThrow(Result<T> result) {
         if (result.isOK())
-            return result;
+            return result.value();
         else
             throw new WebApplicationException(statusCodeFrom(result));
     }
 
-    private static Status statusCodeFrom(Result<?> result) {
+    /**
+     * Translates a Result<T> to a HTTP Status code
+     */
+    private static Response.Status statusCodeFrom(Result<?> result) {
         return switch (result.error()) {
-            case CONFLICT -> Status.CONFLICT;
-            case NOT_FOUND -> Status.NOT_FOUND;
-            case FORBIDDEN -> Status.FORBIDDEN;
-            case BAD_REQUEST -> Status.BAD_REQUEST;
-            case INTERNAL_ERROR -> Status.INTERNAL_SERVER_ERROR;
-            case NOT_IMPLEMENTED -> Status.NOT_IMPLEMENTED;
-            case OK -> result.value() == null ? Status.NO_CONTENT : Status.OK;
-            default -> Status.INTERNAL_SERVER_ERROR;
+            case CONFLICT -> Response.Status.CONFLICT;
+            case NOT_FOUND -> Response.Status.NOT_FOUND;
+            case FORBIDDEN -> Response.Status.FORBIDDEN;
+            case BAD_REQUEST -> Response.Status.BAD_REQUEST;
+            case INTERNAL_ERROR -> Response.Status.INTERNAL_SERVER_ERROR;
+            case NOT_IMPLEMENTED -> Response.Status.NOT_IMPLEMENTED;
+            case OK -> result.value() == null ? Response.Status.NO_CONTENT : Response.Status.OK;
+            default -> Response.Status.INTERNAL_SERVER_ERROR;
         };
     }
 

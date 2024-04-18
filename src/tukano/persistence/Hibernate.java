@@ -148,7 +148,7 @@ public class Hibernate {
 		return sessionFactory;
 	}
 
-	public <T> List<T> jpql(String jpqlStatement, Class<T> clazz, Map<String, Object> parameters) {
+	public <T> List<T> jpql2(String jpqlStatement, Class<T> clazz, Map<String, Object> parameters) {
 		try (var session = sessionFactory.openSession()) {
 			var query = session.createQuery(jpqlStatement, clazz);
 

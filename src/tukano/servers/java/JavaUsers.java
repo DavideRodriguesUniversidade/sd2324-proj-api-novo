@@ -22,16 +22,21 @@ public class JavaUsers implements Users {
     public Result<String> createUser(User user) {
         Log.info("createUser : " + user);
 
+        Log.info("Antes algo");
         // Check if user data is valid
         if (user.userId() == null || user.pwd() == null || user.displayName() == null || user.email() == null) {
             Log.info("User object invalid.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
-
+        Log.info("Pos algo");
+        
+        Log.info("Antes hibernate");
         // Check if user already exists in the database
         Hibernate hibernate = Hibernate.getInstance();
         List<User> existingUsers = hibernate.jpql("SELECT u FROM User u WHERE u.userId = '" + user.userId() + "'", User.class);
-
+        Log.info("Pos hibernate");
+        
+        
         if (!existingUsers.isEmpty()) {
             Log.info("User already exists.");
             return Result.error(ErrorCode.CONFLICT);

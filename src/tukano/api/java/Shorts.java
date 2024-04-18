@@ -72,6 +72,7 @@ public interface Shorts {
 	 *                    operation
 	 * @param password 	  the password of the follower
 	 * @return (OK,), 
+	 *  CONFLICT if the follow already exists.
 	 * 	NOT_FOUND if any of the users does not exist
 	 *  FORBIDDEN if the password is incorrect
 	 */
@@ -124,4 +125,5 @@ public interface Shorts {
 	 *  FORBIDDEN if the password is incorrect
 	 */
 	Result<List<String>> getFeed(String userId, String password);
+	
 }
