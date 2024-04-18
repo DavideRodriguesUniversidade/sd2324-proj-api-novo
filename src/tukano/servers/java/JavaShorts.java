@@ -1,30 +1,37 @@
 package tukano.servers.java;
 
+import java.net.URI;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import tukano.api.java.Blobs;
 import tukano.api.java.Result;
 import tukano.api.java.Result.ErrorCode;
 import tukano.api.Follow;
 import tukano.api.ShortLike;
 import tukano.api.Short;
 import tukano.api.User;
-import tukano.api.factory.UsersClientFactory;
+import tukano.api.Verifier;
+import tukano.api.clients.BlobsClient;
+import tukano.api.clients.UsersClient;
 import tukano.api.java.Shorts;
 import tukano.api.java.Users;
+import tukano.discovery.Discovery;
 import tukano.persistence.Hibernate;
+import tukano.servers.rest.RestBlobsServer;
+import tukano.servers.rest.RestUsersServer;
 
 public class JavaShorts implements Shorts {
 
     private static Logger Log = Logger.getLogger(JavaShorts.class.getName());
-
+    
     @Override
     public Result<Short> createShort(String userId, String password) {
         Log.info("createShort : userId = " + userId);
 
         try {
-            Users usersClient = UsersClientFactory.getClient();
+            Users usersClient = UsersClient.getClient();
             
             // Retrieve user details via GET request
             Result<User> userResult = usersClient.getUser(userId, password);
@@ -35,12 +42,18 @@ public class JavaShorts implements Shorts {
             }
 
             String shortId = generateUniqueShortId();
-            String blobUrl = "";
+            String verifier = UUID.randomUUID().toString();
+            
+            Verifier v = new Verifier(shortId, verifier);
+            Hibernate hibernate = Hibernate.getInstance();
+            hibernate.persist(v);
+            
+            String blobUrl = getUrl() + "/blobs/" + verifier;
+
             // Create a new short
             Short newShort = new Short(shortId, userId, blobUrl);
 
             // Persist the short using Hibernate
-            Hibernate hibernate = Hibernate.getInstance();
             hibernate.persistShort(newShort);
 
             return Result.ok(newShort);
@@ -51,15 +64,13 @@ public class JavaShorts implements Shorts {
         }
     }
 
-
-
     @Override
     public Result<Void> deleteShort(String shortId, String password) {
         Log.info("deleteShort : shortId = " + shortId);
 
-        // Check if shortId is valid
-        if (shortId == null) {
-            Log.info("Short ID null.");
+        // Check if shortId or password is null
+        if (shortId == null || password == null) {
+            Log.info("Short ID or Password null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
 
@@ -69,12 +80,20 @@ public class JavaShorts implements Shorts {
             return Result.error(ErrorCode.NOT_FOUND);
         }
 
+        // Check if the password matches
+        Result<User> userResult = UsersClient.getClient().getUser(result.value().getOwnerId(), password);
+        if (!userResult.isOK()) {
+            Log.info("Incorrect password.");
+            return Result.error(ErrorCode.FORBIDDEN);
+        }
+
         // Delete the short using Hibernate
         Hibernate hibernate = Hibernate.getInstance();
         hibernate.deleteShort(result.value());
 
         return Result.ok(null);
     }
+
 
     @Override
     public Result<Short> getShort(String shortId) {
@@ -99,6 +118,15 @@ public class JavaShorts implements Shorts {
     @Override
     public Result<List<String>> getShorts(String userId) {
         Log.info("getShorts : userId = " + userId);
+        
+        Users usersClient = UsersClient.getClient();
+
+        // Check if the user exists
+        Result<User> userResult = usersClient.activeUser(userId);
+        if (!userResult.isOK()) {
+            Log.info("User not found: " + userId);
+            return Result.error(ErrorCode.NOT_FOUND);
+        }
 
         // Retrieve the shorts for the user from the database using Hibernate
         Hibernate hibernate = Hibernate.getInstance();
@@ -107,7 +135,6 @@ public class JavaShorts implements Shorts {
 
         return Result.ok(shortIds);
     }
-
 
     @Override
     public Result<Void> follow(String userId1, String userId2, boolean isFollowing, String password) {
@@ -122,7 +149,7 @@ public class JavaShorts implements Shorts {
         Hibernate hibernate = Hibernate.getInstance();
 
         // Check if password is correct for userId1
-        Result<User> userResult1 = UsersClientFactory.getClient().getUser(userId1, password);
+        Result<User> userResult1 = UsersClient.getClient().getUser(userId1, password);
         if (!userResult1.isOK()) {
             Log.info("User retrieval failed or incorrect password for userId1.");
             return Result.error(ErrorCode.FORBIDDEN);
@@ -145,7 +172,6 @@ public class JavaShorts implements Shorts {
         return Result.ok(null);
     }
 
-
     @Override
     public Result<List<String>> followers(String userId, String password) {
         Log.info("followers : userId = " + userId);
@@ -159,7 +185,7 @@ public class JavaShorts implements Shorts {
         Hibernate hibernate = Hibernate.getInstance();
 
         // Check if password is correct for userId
-        Result<User> userResult = UsersClientFactory.getClient().getUser(userId, password);
+        Result<User> userResult = UsersClient.getClient().getUser(userId, password);
         if (!userResult.isOK()) {
             Log.info("User retrieval failed or incorrect password.");
             return Result.error(ErrorCode.FORBIDDEN);
@@ -188,7 +214,7 @@ public class JavaShorts implements Shorts {
         Hibernate hibernate = Hibernate.getInstance();
 
         // Check if password is correct for userId
-        Result<User> userResult = UsersClientFactory.getClient().getUser(userId, password);
+        Result<User> userResult = UsersClient.getClient().getUser(userId, password);
         if (!userResult.isOK()) {
             Log.info("User retrieval failed or incorrect password.");
             return Result.error(ErrorCode.FORBIDDEN);
@@ -210,22 +236,20 @@ public class JavaShorts implements Shorts {
 
             // Update the totalLikes count in the Short entity
             existingShort.setTotalLikes(existingShort.getTotalLikes() + 1);
-            hibernate.updateShort(existingShort); // Assuming you have a method to update the Short entity in Hibernate
+            hibernate.updateShort(existingShort); 
         } else if (!isLiked && !existingLike.isEmpty()) {
             // Remove the existing Like entity
             hibernate.delete(existingLike.get(0));
 
             // Update the totalLikes count in the Short entity
             existingShort.setTotalLikes(existingShort.getTotalLikes() - 1);
-            hibernate.updateShort(existingShort); // Assuming you have a method to update the Short entity in Hibernate
+            hibernate.updateShort(existingShort); 
         } else if (isLiked && !existingLike.isEmpty()) {
             return Result.error(ErrorCode.CONFLICT);
         }
 
         return Result.ok(null);
     }
-
-
 
     @Override
     public Result<List<String>> likes(String shortId, String password) {
@@ -246,7 +270,7 @@ public class JavaShorts implements Shorts {
             return Result.error(ErrorCode.NOT_FOUND);
         }
 
-        Result<User> userResult = UsersClientFactory.getClient().getUser(existingShort.getOwnerId(), password);
+        Result<User> userResult = UsersClient.getClient().getUser(existingShort.getOwnerId(), password);
         if (!userResult.isOK()) {
             Log.info("User retrieval failed or incorrect password.");
             return Result.error(ErrorCode.FORBIDDEN);
@@ -267,16 +291,19 @@ public class JavaShorts implements Shorts {
         // Check if userId and password are valid
         if (userId == null || password == null) {
             Log.info("userId or Password null.");
-            return Result.error(ErrorCode.BAD_REQUEST);
+            return Result.error(ErrorCode.NOT_FOUND);
         }
         
         Hibernate hibernate = Hibernate.getInstance();
 
-        // Check if password is correct for userId
-        Result<User> userResult = UsersClientFactory.getClient().getUser(userId, password);
-        if (!userResult.isOK()) {
-            Log.info("User retrieval failed or incorrect password.");
+        
+        Result<User> userResult = UsersClient.getClient().getUser(userId, password);
+        if (!userResult.isOK() && userResult.error() == ErrorCode.FORBIDDEN) {
+            Log.info("Incorrect password.");
             return Result.error(ErrorCode.FORBIDDEN);
+        } else if (!userResult.isOK()) {
+            Log.info("User retrieval failed.");
+            return Result.error(ErrorCode.NOT_FOUND);
         }
 
         // Query the database to get the list of users that the given userId follows
@@ -308,10 +335,111 @@ public class JavaShorts implements Shorts {
 
         return Result.ok(feed);
     }
+    
+    public Result<List<Verifier>> verify(String verifier) {
+        Log.info("verify : verifier = " + verifier);
+
+		List<Verifier> verifiers = Hibernate.getInstance().jpql2(
+				"SELECT v FROM Verifier v WHERE (v.verifier = :verifier)",
+				Verifier.class,
+				Map.of("verifier", verifier));
+		if (verifiers.isEmpty()) {
+			Log.info("Verifier does not exist.");
+			return Result.error(ErrorCode.NOT_IMPLEMENTED);
+		}
+		return Result.ok(verifiers);
+	}
+    
+    @Override
+    public Result<Void> deleteShortsByUser(String userId) {
+        Log.info("deleteShortsByUser : userId = " + userId);
+
+        // Fetch the list of shorts associated with the user
+        Hibernate hibernate = Hibernate.getInstance();
+        List<Short> userShorts = hibernate.jpql("SELECT s FROM Short s WHERE s.ownerId = '" + userId + "'", Short.class);
+
+        if (userShorts.isEmpty()) {
+            Log.info("No shorts found for user: " + userId);
+            return Result.ok(null);
+        }
+        
+        // Delete each short associated with the user
+        for (Short s : userShorts) {
+            Blobs blobsClient = BlobsClient.getClient();
+            
+            List<Verifier> existingVerifiers = Hibernate.getInstance().jpql2(
+    				"SELECT v FROM Verifier v WHERE v.shortId = :shortId",
+    				Verifier.class,
+    				Map.of("shortId", s.getShortId()));
+            
+            if (!existingVerifiers.isEmpty()) {
+    			for (Verifier Verifiers : existingVerifiers) {
+    				blobsClient.deleteBlob(Verifiers.getVerifier());
+    				Hibernate.getInstance().delete(Verifiers);
+    			}
+    		}
+
+            // Delete the short from the database
+            hibernate.delete(s);
+        }
+
+        Log.info("Deleted shorts and blobs for user: " + userId);
+        return Result.ok(null);
+    }
+    
+    
+    @Override
+    public Result<Void> deleteLikesByUser(String userId) {
+        Log.info("deleteLikesByUser : userId = " + userId);
+
+        // Fetch the list of likes associated with the user
+        Hibernate hibernate = Hibernate.getInstance();
+        List<ShortLike> userLikes = hibernate.jpql("SELECT l FROM ShortLike l WHERE l.userId = '" + userId + "'", ShortLike.class);
+
+        if (userLikes.isEmpty()) {
+            Log.info("No likes found for user: " + userId);
+            return Result.ok(null);
+        }
+
+        // Delete each like associated with the user
+        for (ShortLike like : userLikes) {
+            // Retrieve the short associated with the like
+            Short existingShort = hibernate.jpql("SELECT s FROM Short s WHERE s.shortId = '" + like.getShortId() + "'", Short.class).stream().findFirst().orElse(null);
+            
+            if (existingShort != null) {
+                // Update the totalLikes count in the Short entity
+                existingShort.setTotalLikes(existingShort.getTotalLikes() - 1);
+                hibernate.updateShort(existingShort); 
+            }
+
+            // Delete the like from the database
+            hibernate.delete(like);
+        }
+
+        Log.info("Deleted likes for user: " + userId);
+        return Result.ok(null);
+    }
+    
+    private static int counter = 0;
+
+    private String getUrl() {
+        Discovery discovery = Discovery.getInstance();
+        var res = discovery.knownUrisOf(RestBlobsServer.SERVICE, 1);
+
+        // Use the counter to alternate between the two servers
+        var port = res[counter % res.length].getPort();
+        var hostname = res[counter % res.length].getHost();
+
+        // Increment the counter for the next request
+        counter++;
+
+        return String.format(RestUsersServer.SERVER_URI_FMT, hostname, port);
+    }
+
+
 
     // Helper method to generate a unique short ID
     private String generateUniqueShortId() {
         return java.util.UUID.randomUUID().toString();
     }
-
 }

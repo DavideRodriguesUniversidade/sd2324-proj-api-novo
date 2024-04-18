@@ -1,5 +1,7 @@
 package tukano.servers.java;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -7,134 +9,100 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import tukano.api.*;
+import tukano.api.Short;
+import tukano.api.clients.ShortsClient;
+import tukano.api.clients.UsersClient;
 import tukano.api.java.Result;
+import tukano.api.java.Users;
 import tukano.api.java.Result.ErrorCode;
+import tukano.api.java.Shorts;
+import tukano.clients.rest.RestShortsClient;
+import tukano.persistence.Hibernate;
 import tukano.api.java.Blobs;
 
 public class JavaBlobs implements Blobs {
 
     private static Logger Log = Logger.getLogger(JavaBlobs.class.getName());
-
-    private boolean blobExistsInFileSystem(String blobId) {
-        // Supondo que os blobs estejam armazenados em algum diretório específico
-        Path blobFilePath = Paths.get("", blobId);
-        return Files.exists(blobFilePath);
-    }
     
-    
-   /* public Result<Void> upload(String blobId, byte[] bytes) {
-        Shorts shortsClient = ShortsClientFactory.getClientShorts();
+    @Override
+    public Result<Void> upload(String blobId, byte[] bytes) {
+        Log.info("upload : blobId = " + blobId);
 
-        try {
-            Result<Short> verifiers = shortsClient.getShortByBlobId(blobId);
-            Log.info("chegou ao upload");
-            Log.info("Verifiers value: " + verifiers.value());            
+        Shorts shortsClient = ShortsClient.getClient();
+        
+        // Retrieve verifier details via GET request
+        Result<List<Verifier>> verifierResult = shortsClient.verify(blobId);
 
-            if (!verifiers.isOK()) {
-                return Result.error(Result.ErrorCode.FORBIDDEN);
-            }
-
-            if (blobExistsInFileSystem(blobId)) {
-                byte[] fileBytes;
-                try {
-                    fileBytes = Files.readAllBytes(Paths.get("", blobId));
-                } catch (IOException e) {
-                    // Handle IOException, e.g., log the error
-                    return Result.error(Result.ErrorCode.INTERNAL_ERROR);
-                }
-
-                if (!Arrays.equals(fileBytes, bytes)) {
-                    return Result.error(Result.ErrorCode.CONFLICT);
-                }
-
-                return Result.ok();
-            }
-
-            // Se o blobId não existe no sistema de arquivos, cria um novo blob
-            createNewBlob(blobId, bytes);
-            return Result.ok(); // Upload bem-sucedido
-        } catch (Exception e) {
-            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        if (!verifierResult.isOK()) {
+            Log.info("BlobId is not valid.");
+            return Result.error(ErrorCode.FORBIDDEN);
         }
-    }*/
-    
-    private Result<Void> createNewBlob(String blobId, byte[] bytes) {
 
+        Verifier verifier = verifierResult.value().get(0);
+
+        // Validate the verifier
+        if (!verifier.getVerifier().equals(blobId)) {
+            Log.info("Verifier does not match.");
+            return Result.error(ErrorCode.FORBIDDEN);
+        }
+
+        // Save the blob to the local file system
         try {
             Path path = Paths.get("", blobId);
 
             if (Files.notExists(path)) {
                 Files.createFile(path);
+                Files.write(path, bytes);
+                Log.info("Blob uploaded successfully.");
+            } else {
+                // If blob exists but bytes don't match, return CONFLICT
+                byte[] existingBytes = Files.readAllBytes(path);
+                if (!Arrays.equals(existingBytes, bytes)) {
+                    Log.info("Blob content does not match.");
+                    return Result.error(ErrorCode.CONFLICT);
+                }
+                Log.info("Blob already exists.");
             }
-            Files.write(path, bytes);
-            return Result.ok(null);
         } catch (IOException e) {
-            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+            Log.severe("Error saving or reading blob: " + e.getMessage());
+            return Result.error(ErrorCode.INTERNAL_ERROR);
         }
-    }
 
+        return Result.ok(null);
+    }
+    
     @Override
     public Result<byte[]> download(String blobId) {
         Log.info("download : blobId = " + blobId);
 
-        // Define the directory where blobs are stored
-        String storageDirectory = "./blobs/";
+        // Check if the blob exists
+        Path path = Paths.get("", blobId);
+        if (Files.notExists(path)) {
+            Log.info("Blob not found.");
+            return Result.error(ErrorCode.NOT_FOUND);
+        }
 
         try {
-            // Define the path for the blob file
-            Path blobPath = Paths.get(storageDirectory, blobId);
-
-            // Check if blobId exists
-            if (Files.exists(blobPath)) {
-                // Read the blob content
-                byte[] blobBytes = Files.readAllBytes(blobPath);
-
-                // Return the blob content
-                return Result.ok(blobBytes);
-            } else {
-                // If blobId does not exist, return NOT_FOUND
-                return Result.error(ErrorCode.NOT_FOUND);
-            }
-
-        } catch (Exception e) {
-            Log.severe("Error downloading blob: " + e.getMessage());
-            e.printStackTrace();
+            byte[] bytes = Files.readAllBytes(path);
+            Log.info("Blob downloaded successfully.");
+            return Result.ok(bytes);
+        } catch (IOException e) {
+            Log.severe("Error reading blob: " + e.getMessage());
             return Result.error(ErrorCode.INTERNAL_ERROR);
         }
     }
-
-    @Override
-    public Result<Void> downloadToSink(String blobId, Consumer<byte[]> sink) {
-        Log.info("downloadToSink : blobId = " + blobId);
-
-        // Define the directory where blobs are stored
-        String storageDirectory = "./blobs/";
-
+    
+    public Result<Void> deleteBlob(String blobId) {
+        Log.info("deleteBlob : blobId = " + blobId);
+        
         try {
-            // Define the path for the blob file
-            Path blobPath = Paths.get(storageDirectory, blobId);
-
-            // Check if blobId exists
-            if (Files.exists(blobPath)) {
-                // Read and stream the blob content in chunks
-                byte[] buffer = new byte[4096]; // 4KB buffer
-                int bytesRead;
-                try (var inputStream = Files.newInputStream(blobPath)) {
-                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                        byte[] chunk = new byte[bytesRead];
-                        System.arraycopy(buffer, 0, chunk, 0, bytesRead);
-                        sink.accept(chunk); // Pass the chunk to the sink
-                    }
-                }
-                return Result.ok();
-            } else {
-                // If blobId does not exist, return NOT_FOUND
-                return Result.error(ErrorCode.NOT_FOUND);
-            }
-
-        } catch (Exception e) {
-            Log.severe("Error downloading blob to sink: " + e.getMessage());
-            e.printStackTrace();
+            Path blobPath = Paths.get("", blobId);
+            Files.deleteIfExists(blobPath);
+            Log.info("Blob deleted successfully.");
+            return Result.ok(null);
+        } catch (IOException e) {
+            Log.severe("Error deleting blob: " + e.getMessage());
             return Result.error(ErrorCode.INTERNAL_ERROR);
         }
     }
@@ -143,11 +111,4 @@ public class JavaBlobs implements Blobs {
     private String generateUniqueBlobId() {
         return java.util.UUID.randomUUID().toString();
     }
-
-
-	@Override
-	public Result<Void> upload(String blobId, byte[] bytes) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

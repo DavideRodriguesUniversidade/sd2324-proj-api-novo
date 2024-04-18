@@ -17,7 +17,7 @@ public class RestShortsServer {
 
     public static final int PORT = 4567;
     public static final String SERVICE = "shorts";
-    private static final String SERVER_URI_FMT = "http://%s:%s/rest";
+    public static final String SERVER_URI_FMT = "http://%s:%s/rest";
 
     public static void main(String[] args) {
 

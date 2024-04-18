@@ -26,6 +26,11 @@ public class RestBlobsResource implements RestBlobs {
     public byte[] download(String blobId){
         return resultOrThrow(impl.download(blobId));
     }
+    
+    @Override
+    public void deleteBlob(String blobId) {
+         resultOrThrow(impl.deleteBlob(blobId));
+    }
 
     protected <T> T resultOrThrow(Result<T> result) {
         if (result.isOK())

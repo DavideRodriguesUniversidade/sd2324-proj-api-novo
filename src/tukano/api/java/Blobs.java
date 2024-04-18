@@ -51,4 +51,7 @@ public interface Blobs {
 		sink.accept(res.value());
 		return Result.ok();
 	}
+
+	Result<Void> deleteBlob(String verifier);
+
 }

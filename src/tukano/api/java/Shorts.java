@@ -4,6 +4,7 @@ package tukano.api.java;
 import java.util.List;
 
 import tukano.api.Short;
+import tukano.api.Verifier;
 
 /**
  * 
@@ -38,8 +39,8 @@ public interface Shorts {
 	 * 
 	 * @param shortId the unique identifier of the short to be deleted
 	 * @return (OK,void), 
-	 * 	NOT_FOUND if shortId does not match an existing short
-	 * 	FORBIDDEN, if the password is not correct;
+	 * 	NOT_FOUND if shortId does not match an existing short -> 404
+	 * 	FORBIDDEN, if the password is not correct; -> 403
 	 */
 	Result<Void> deleteShort(String shortId, String password);
 	
@@ -121,9 +122,14 @@ public interface Shorts {
 	 * @param userId user of the requested feed
 	 * @param password the password of the user
 	 * @return (OK,List<String>|empty list)
-	 * 	NOT_FOUND if the user does not exists
-	 *  FORBIDDEN if the password is incorrect
+	 * 	NOT_FOUND if the user does not exists -> 404
+	 *  FORBIDDEN if the password is incorrect -> 403
 	 */
 	Result<List<String>> getFeed(String userId, String password);
-	
+
+	Result<List<Verifier>> verify(String verifier);
+
+	Result<Void> deleteShortsByUser(String userId);
+
+	Result<Void> deleteLikesByUser(String userId);
 }

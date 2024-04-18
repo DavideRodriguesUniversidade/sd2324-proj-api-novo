@@ -2,6 +2,7 @@ package tukano.api.rest;
 
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -25,4 +26,9 @@ public interface RestBlobs {
  	@Path("{" + BLOB_ID +"}") 	
  	@Produces(MediaType.APPLICATION_OCTET_STREAM)
  	byte[] download(@PathParam(BLOB_ID) String blobId);
+ 	
+ 	@DELETE
+	@Path("{" + BLOB_ID +"}"+"/delete")
+	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
+	public void deleteBlob(@PathParam(BLOB_ID) String blobId);
 }

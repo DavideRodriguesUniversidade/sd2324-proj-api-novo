@@ -37,9 +37,7 @@ public class RestClient {
     		return Result.error(getErrorCodeFrom(status.getStatusCode()));
     	} finally {
     		r.close();
-    	}
-
-   
+    	}   
 }
 
     public static ErrorCode getErrorCodeFrom(int status) {

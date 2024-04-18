@@ -7,7 +7,7 @@
         <property name="connection.username">sa</property>
         <property name="connection.password"></property>
         <!-- JDBC connection pool settings ... using built-in test pool -->
-        <property name="connection.pool_size">1</property>
+        <property name="connection.pool_size">1000</property>
         <!-- Echo the SQL to stdout -->
         <property name="show_sql">true</property>
         <!-- Set the current session context -->
@@ -32,5 +32,9 @@
         <mapping class="tukano.api.ShortLike" />
         <!-- Mapping for ShortLikeID entity -->
         <mapping class="tukano.api.ShortLikeID" />
+        <!-- Mapping for Verifier entity -->
+        <mapping class="tukano.api.Verifier" />
+        <!-- Mapping for VerifierID entity -->
+        <mapping class="tukano.api.VerifierID" />
     </session-factory>
 </hibernate-configuration>

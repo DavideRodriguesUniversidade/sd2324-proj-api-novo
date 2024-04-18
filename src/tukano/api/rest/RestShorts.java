@@ -12,6 +12,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import tukano.api.Short;
+import tukano.api.Verifier;
 
 @Path(RestShorts.PATH)
 public interface RestShorts {
@@ -21,6 +22,8 @@ public interface RestShorts {
 	String USER_ID1 = "userId1";
 	String USER_ID2 = "userId2";
 	String SHORT_ID = "shortId";
+	String BLOB_ID = "blobId";
+
 	
 	String PWD = "pwd";
 	String FEED = "/feed";
@@ -72,4 +75,18 @@ public interface RestShorts {
 	@Path("/{" + USER_ID + "}" + FEED )
 	@Produces(MediaType.APPLICATION_JSON)
 	List<String> getFeed( @PathParam(USER_ID) String userId, @QueryParam(PWD) String password);
+
+	@GET
+	@Path("/{" + BLOB_ID + "}" + "/verify")
+	@Produces(MediaType.APPLICATION_JSON)
+	List<Verifier> verify(@PathParam(BLOB_ID) String verifier);
+
+	 @DELETE
+	 @Path("/{" + USER_ID + "}" + SHORTS)
+	 Void deleteShortsByUser(@PathParam(USER_ID) String userId);
+	 
+	 @DELETE
+	 @Path("/{" + USER_ID + "}" + LIKES)
+	 Void deleteLikesByUser(@PathParam(USER_ID) String userId);
+
 }

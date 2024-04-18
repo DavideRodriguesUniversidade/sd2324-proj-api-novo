@@ -8,6 +8,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tukano.api.java.Result;
 import tukano.api.Short;
+import tukano.api.Verifier;
 import tukano.api.java.Shorts;
 import tukano.api.rest.RestShorts;  // Adjusted the import to match the interface
 import tukano.servers.java.JavaShorts;  // Adjusted the import to match the implementation
@@ -65,7 +66,22 @@ public class RestShortsResource implements RestShorts {  // Changed the interfac
     public List<String> getFeed(String userId, String password) {
         return resultOrThrow(impl.getFeed(userId, password));
     }
+    
+    @Override
+	public List<Verifier> verify(String verifier) {
+		return resultOrThrow(impl.verify(verifier));
+	}
+    
+    @Override
+	public Void deleteShortsByUser(String userId) {
+		return resultOrThrow(impl.deleteShortsByUser(userId));
+	}
+    
+    @Override
+	public Void deleteLikesByUser(String userId) {
+		return resultOrThrow(impl.deleteLikesByUser(userId));
 
+	}
     /**
      * Given a Result<T>, either returns the value, or throws the JAX-WS Exception
      * matching the error code...
@@ -92,5 +108,4 @@ public class RestShortsResource implements RestShorts {  // Changed the interfac
             default -> Status.INTERNAL_SERVER_ERROR;
         };
     }
-
 }

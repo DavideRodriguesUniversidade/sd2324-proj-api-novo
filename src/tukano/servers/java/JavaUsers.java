@@ -1,10 +1,13 @@
 package tukano.servers.java;
 
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import tukano.api.java.Result;
+import tukano.api.java.Shorts;
 import tukano.api.java.Result.ErrorCode;
 import tukano.api.User;
+import tukano.api.clients.ShortsClient;
 import tukano.api.java.Users;
 import tukano.discovery.Discovery;
 import tukano.persistence.Hibernate;
@@ -156,8 +159,10 @@ public class JavaUsers implements Users {
         }
 
         Hibernate hibernate = Hibernate.getInstance();
+
+        // Retrieve user
         List<User> users = hibernate.jpql("SELECT u FROM User u WHERE u.userId = '" + userId + "'", User.class);
-        
+
         // Check if user exists
         if (users.isEmpty()) {
             Log.info("User does not exist.");
@@ -172,11 +177,26 @@ public class JavaUsers implements Users {
             return Result.error(ErrorCode.FORBIDDEN);
         }
 
+        Shorts shortsClient = ShortsClient.getClient();
+        // Delete shorts associated with the user
+        Result<Void> deleteShortsResult = shortsClient.deleteShortsByUser(userId);
+        if (!deleteShortsResult.isOK()) {
+            Log.info("Error deleting shorts for user: " + userId);
+            return Result.error(ErrorCode.INTERNAL_ERROR);
+        }
+        
+        Result<Void> deleteLikesResult = shortsClient.deleteLikesByUser(userId);
+        if (!deleteLikesResult.isOK()) {
+            Log.info("Error deleting shorts for user: " + userId);
+            return Result.error(ErrorCode.INTERNAL_ERROR);
+        }
+
         // Delete user
         hibernate.delete(user);
 
         return Result.ok(user);
     }
+
 
     @Override
     public Result<List<User>> searchUsers(String pattern) {
@@ -194,8 +214,25 @@ public class JavaUsers implements Users {
         
         return Result.ok(matchedUsers);
     }
-
-	
-
-
+    
+    
+    public Result<User> activeUser(String userId) {
+        Log.info("activeUser: userId = " + userId);
+        
+        // Retrieve the user from the database using Hibernate
+        Hibernate hibernate = Hibernate.getInstance();
+        List<User> users = hibernate.jpql2(
+                "SELECT u FROM User u WHERE u.userId = :userId",
+                User.class,
+                Map.of("userId", userId));
+        
+        // Check if the user exists
+        if (users.isEmpty()) {
+            Log.info("User does not exist.");
+            return Result.error(ErrorCode.NOT_FOUND);
+        }
+        
+        User activeUser = users.get(0);
+        return Result.ok(activeUser);
+    }
 }

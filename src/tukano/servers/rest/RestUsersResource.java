@@ -45,6 +45,11 @@ public class RestUsersResource implements RestUsers {
     public List<User> searchUsers(String pattern) {
         return resultOrThrow(impl.searchUsers(pattern));
     }
+    
+    @Override
+   	public User activeUser(String userId) {
+       	 return resultOrThrow(impl.activeUser(userId));
+   	}
 
     /**
      * Given a Result<T>, either returns the value, or throws the JAX-WS Exception
@@ -72,5 +77,7 @@ public class RestUsersResource implements RestUsers {
             default -> Status.INTERNAL_SERVER_ERROR;
         };
     }
+
+	
 
 }
