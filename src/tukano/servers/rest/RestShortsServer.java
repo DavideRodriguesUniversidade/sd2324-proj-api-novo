@@ -23,7 +23,7 @@ public class RestShortsServer {
 
         try {
             ResourceConfig config = new ResourceConfig();
-            config.register(  RestBlobsResource.class );
+            config.register(  RestShortsResource.class );
 
             String ip = InetAddress.getLocalHost().getHostAddress();
             String serverURI = String.format(SERVER_URI_FMT, ip, PORT);

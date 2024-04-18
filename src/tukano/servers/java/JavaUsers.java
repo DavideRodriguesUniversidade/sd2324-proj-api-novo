@@ -1,11 +1,6 @@
 package tukano.servers.java;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 import tukano.api.java.Result;
 import tukano.api.java.Result.ErrorCode;
@@ -17,25 +12,20 @@ import tukano.persistence.Hibernate;
 public class JavaUsers implements Users {
 
     private static Logger Log = Logger.getLogger(JavaUsers.class.getName());
-
+    
     @Override
     public Result<String> createUser(User user) {
         Log.info("createUser : " + user);
 
-        Log.info("Antes algo");
         // Check if user data is valid
         if (user.userId() == null || user.pwd() == null || user.displayName() == null || user.email() == null) {
             Log.info("User object invalid.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
-        Log.info("Pos algo");
-        
-        Log.info("Antes hibernate");
         // Check if user already exists in the database
         Hibernate hibernate = Hibernate.getInstance();
         List<User> existingUsers = hibernate.jpql("SELECT u FROM User u WHERE u.userId = '" + user.userId() + "'", User.class);
-        Log.info("Pos hibernate");
-        
+    
         
         if (!existingUsers.isEmpty()) {
             Log.info("User already exists.");
@@ -204,6 +194,8 @@ public class JavaUsers implements Users {
         
         return Result.ok(matchedUsers);
     }
+
+	
 
 
 }
