@@ -1,9 +1,5 @@
 package tukano.api;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import jakarta.persistence.*;
 
 @Entity
@@ -20,6 +16,7 @@ public class User {
 
 	public User() {}
 	
+	//Constructor, getters and setters
 	public User(String userId, String pwd, String email, String displayName) {
 		this.pwd = pwd;
 		this.email = email;
@@ -74,13 +71,5 @@ public class User {
 		return "User [userId=" + userId + ", pwd=" + pwd + ", email=" + email + ", displayName=" + displayName + "]";
 	}
 	
-	/* public void addFollowing(String userId) {
-	        following.add(userId);
-	    }
-
-	   public void removeFollowing(String userId) {
-	        following.remove(userId);
-	   }*/
-
 	
 }

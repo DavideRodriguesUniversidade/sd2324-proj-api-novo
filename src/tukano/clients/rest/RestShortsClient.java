@@ -2,8 +2,6 @@ package tukano.clients.rest;
 
 import java.net.URI;
 import java.util.List;
-import java.util.logging.Logger;
-
 
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
@@ -25,7 +23,6 @@ import tukano.api.rest.RestShorts;
 import tukano.api.rest.RestUsers;
 
 public class RestShortsClient  extends RestClient implements Shorts {
-	private static Logger Log = Logger.getLogger(RestUsersClient.class.getName());
 
 	protected static final int READ_TIMEOUT = 2000;
 	protected static final int CONNECT_TIMEOUT = 2000;

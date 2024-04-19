@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class VerifierID  implements  Serializable{
 	
 	
-	   private String shortId;
+	    private String shortId;
 
 	    private String verifier;
 

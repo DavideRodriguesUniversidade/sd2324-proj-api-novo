@@ -2,7 +2,6 @@ package tukano.servers.java;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,15 +9,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import tukano.api.*;
-import tukano.api.Short;
 import tukano.api.clients.ShortsClient;
-import tukano.api.clients.UsersClient;
 import tukano.api.java.Result;
-import tukano.api.java.Users;
 import tukano.api.java.Result.ErrorCode;
 import tukano.api.java.Shorts;
-import tukano.clients.rest.RestShortsClient;
-import tukano.persistence.Hibernate;
 import tukano.api.java.Blobs;
 
 public class JavaBlobs implements Blobs {
@@ -107,8 +101,4 @@ public class JavaBlobs implements Blobs {
         }
     }
 
-    // Helper method to generate a unique blob ID
-    private String generateUniqueBlobId() {
-        return java.util.UUID.randomUUID().toString();
-    }
 }

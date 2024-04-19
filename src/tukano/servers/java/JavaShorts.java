@@ -1,6 +1,5 @@
 package tukano.servers.java;
 
-import java.net.URI;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,6 +25,8 @@ public class JavaShorts implements Shorts {
 
     private static Logger Log = Logger.getLogger(JavaShorts.class.getName());
     
+    private Hibernate hibernate = Hibernate.getInstance();
+    
     @Override
     public Result<Short> createShort(String userId, String password) {
         Log.info("createShort : userId = " + userId);
@@ -45,7 +46,7 @@ public class JavaShorts implements Shorts {
             String verifier = UUID.randomUUID().toString();
             
             Verifier v = new Verifier(shortId, verifier);
-            Hibernate hibernate = Hibernate.getInstance();
+            
             hibernate.persist(v);
             
             String blobUrl = getUrl() + "/blobs/" + verifier;
@@ -88,7 +89,6 @@ public class JavaShorts implements Shorts {
         }
 
         // Delete the short using Hibernate
-        Hibernate hibernate = Hibernate.getInstance();
         hibernate.deleteShort(result.value());
 
         return Result.ok(null);
@@ -105,7 +105,6 @@ public class JavaShorts implements Shorts {
             return Result.error(ErrorCode.BAD_REQUEST);
         }
         // Retrieve the short from the database using Hibernate
-        Hibernate hibernate = Hibernate.getInstance();
         List<Short> shorts = hibernate.jpql("SELECT s FROM Short s WHERE s.shortId = '" + shortId + "'", Short.class);
         if (shorts.isEmpty()) {
             Log.info("Short does not exist.");
@@ -129,7 +128,6 @@ public class JavaShorts implements Shorts {
         }
 
         // Retrieve the shorts for the user from the database using Hibernate
-        Hibernate hibernate = Hibernate.getInstance();
         List<Short> userShorts = hibernate.jpql("SELECT s FROM Short s WHERE s.ownerId = '" + userId + "'", Short.class);
         List<String> shortIds = userShorts.stream().map(Short::getShortId).collect(Collectors.toList());
 
@@ -145,8 +143,6 @@ public class JavaShorts implements Shorts {
             Log.info("userId1, userId2 or Password null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
-        
-        Hibernate hibernate = Hibernate.getInstance();
 
         // Check if password is correct for userId1
         Result<User> userResult1 = UsersClient.getClient().getUser(userId1, password);
@@ -181,8 +177,6 @@ public class JavaShorts implements Shorts {
             Log.info("userId or Password null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
-        
-        Hibernate hibernate = Hibernate.getInstance();
 
         // Check if password is correct for userId
         Result<User> userResult = UsersClient.getClient().getUser(userId, password);
@@ -210,8 +204,6 @@ public class JavaShorts implements Shorts {
             Log.info("shortId, userId, or Password null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
-
-        Hibernate hibernate = Hibernate.getInstance();
 
         // Check if password is correct for userId
         Result<User> userResult = UsersClient.getClient().getUser(userId, password);
@@ -261,8 +253,6 @@ public class JavaShorts implements Shorts {
             return Result.error(ErrorCode.BAD_REQUEST);
         }
 
-        Hibernate hibernate = Hibernate.getInstance();
-
         // Check if password is correct for the owner of the short
         Short existingShort = hibernate.jpql("SELECT s FROM Short s WHERE s.shortId = '" + shortId + "'", Short.class).stream().findFirst().orElse(null);
         if (existingShort == null) {
@@ -293,10 +283,7 @@ public class JavaShorts implements Shorts {
             Log.info("userId or Password null.");
             return Result.error(ErrorCode.NOT_FOUND);
         }
-        
-        Hibernate hibernate = Hibernate.getInstance();
-
-        
+     
         Result<User> userResult = UsersClient.getClient().getUser(userId, password);
         if (!userResult.isOK() && userResult.error() == ErrorCode.FORBIDDEN) {
             Log.info("Incorrect password.");
@@ -355,7 +342,6 @@ public class JavaShorts implements Shorts {
         Log.info("deleteShortsByUser : userId = " + userId);
 
         // Fetch the list of shorts associated with the user
-        Hibernate hibernate = Hibernate.getInstance();
         List<Short> userShorts = hibernate.jpql("SELECT s FROM Short s WHERE s.ownerId = '" + userId + "'", Short.class);
 
         if (userShorts.isEmpty()) {
@@ -393,7 +379,6 @@ public class JavaShorts implements Shorts {
         Log.info("deleteLikesByUser : userId = " + userId);
 
         // Fetch the list of likes associated with the user
-        Hibernate hibernate = Hibernate.getInstance();
         List<ShortLike> userLikes = hibernate.jpql("SELECT l FROM ShortLike l WHERE l.userId = '" + userId + "'", ShortLike.class);
 
         if (userLikes.isEmpty()) {

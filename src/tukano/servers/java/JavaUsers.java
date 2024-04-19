@@ -9,12 +9,13 @@ import tukano.api.java.Result.ErrorCode;
 import tukano.api.User;
 import tukano.api.clients.ShortsClient;
 import tukano.api.java.Users;
-import tukano.discovery.Discovery;
 import tukano.persistence.Hibernate;
 
 public class JavaUsers implements Users {
 
     private static Logger Log = Logger.getLogger(JavaUsers.class.getName());
+
+    private Hibernate hibernate = Hibernate.getInstance();;
     
     @Override
     public Result<String> createUser(User user) {
@@ -25,10 +26,9 @@ public class JavaUsers implements Users {
             Log.info("User object invalid.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
+        
         // Check if user already exists in the database
-        Hibernate hibernate = Hibernate.getInstance();
         List<User> existingUsers = hibernate.jpql("SELECT u FROM User u WHERE u.userId = '" + user.userId() + "'", User.class);
-    
         
         if (!existingUsers.isEmpty()) {
             Log.info("User already exists.");
@@ -59,31 +59,18 @@ public class JavaUsers implements Users {
         }
 
         // Fetch the user from the database using Hibernate
-        Hibernate hibernate = Hibernate.getInstance();
         List<User> users = hibernate.jpql("SELECT u FROM User u WHERE u.userId = '" + userId + "'", User.class);
 
-        // Check if user exists
-        if (users.isEmpty()) {
-            Log.info("User does not exist.");
-            return Result.error(ErrorCode.NOT_FOUND);
+        // Check if user exists and if the password matches
+        switch (userVerifications(users, pwd)) {
+            case 1:
+                return Result.error(ErrorCode.NOT_FOUND);
+            case 2:
+                return Result.error(ErrorCode.FORBIDDEN);
         }
 
         User user = users.get(0);
-
-        // Check if the password is correct
-        if (!user.pwd().equals(pwd)) {
-            Log.info("Password is incorrect.");
-            return Result.error(ErrorCode.FORBIDDEN);
-        }
         
-        try {
-            Discovery discovery = Discovery.getInstance();
-            discovery.announce("users", "http://172.18.0.3:3546/rest");  
-        } catch (Exception e) {
-            Log.info("Failed to announce user details.");
-            e.printStackTrace();
-        }
-
         return Result.ok(user);
     }
     
@@ -98,22 +85,17 @@ public class JavaUsers implements Users {
         }
 
         // Fetch the user from the database using Hibernate
-        Hibernate hibernate = Hibernate.getInstance();
         List<User> users = hibernate.jpql("SELECT u FROM User u WHERE u.userId = '" + userId + "'", User.class);
 
-        // Check if user exists
-        if (users.isEmpty()) {
-            Log.info("User does not exist.");
-            return Result.error(ErrorCode.NOT_FOUND);
+        // Check if user exists and if the password matches
+        switch (userVerifications(users, pwd)) {
+            case 1:
+                return Result.error(ErrorCode.NOT_FOUND);
+            case 2:
+                return Result.error(ErrorCode.FORBIDDEN);
         }
 
         User user = users.get(0);
-
-        // Check if the password is correct
-        if (!user.pwd().equals(pwd)) {
-            Log.info("Password is incorrect.");
-            return Result.error(ErrorCode.FORBIDDEN);
-        }
 
         // Check if userId is being changed
         if (!userId.equals(updatedUser.userId())) {
@@ -158,26 +140,20 @@ public class JavaUsers implements Users {
             return Result.error(ErrorCode.BAD_REQUEST);
         }
 
-        Hibernate hibernate = Hibernate.getInstance();
-
         // Retrieve user
         List<User> users = hibernate.jpql("SELECT u FROM User u WHERE u.userId = '" + userId + "'", User.class);
 
-        // Check if user exists
-        if (users.isEmpty()) {
-            Log.info("User does not exist.");
-            return Result.error(ErrorCode.NOT_FOUND);
+        // Check if user exists and if the password matches
+        switch (userVerifications(users, pwd)) {
+            case 1:
+                return Result.error(ErrorCode.NOT_FOUND);
+            case 2:
+                return Result.error(ErrorCode.FORBIDDEN);
         }
-        
         User user = users.get(0);
 
-        // Check if the password is correct
-        if (!user.pwd().equals(pwd)) {
-            Log.info("Password is incorrect.");
-            return Result.error(ErrorCode.FORBIDDEN);
-        }
-
         Shorts shortsClient = ShortsClient.getClient();
+
         // Delete shorts associated with the user
         Result<Void> deleteShortsResult = shortsClient.deleteShortsByUser(userId);
         if (!deleteShortsResult.isOK()) {
@@ -207,10 +183,8 @@ public class JavaUsers implements Users {
             Log.info("Pattern null.");
             return Result.error(ErrorCode.BAD_REQUEST);
         }
-         
-        Hibernate hibernate = Hibernate.getInstance();
-        List<User> matchedUsers = hibernate.jpql("SELECT u FROM User u WHERE LOWER(u.userId) LIKE '%" + pattern.toLowerCase() + "%'", User.class);
         
+        List<User> matchedUsers = hibernate.jpql("SELECT u FROM User u WHERE LOWER(u.userId) LIKE '%" + pattern.toLowerCase() + "%'", User.class);
         
         return Result.ok(matchedUsers);
     }
@@ -220,7 +194,6 @@ public class JavaUsers implements Users {
         Log.info("activeUser: userId = " + userId);
         
         // Retrieve the user from the database using Hibernate
-        Hibernate hibernate = Hibernate.getInstance();
         List<User> users = hibernate.jpql2(
                 "SELECT u FROM User u WHERE u.userId = :userId",
                 User.class,
@@ -234,5 +207,20 @@ public class JavaUsers implements Users {
         
         User activeUser = users.get(0);
         return Result.ok(activeUser);
+    }
+
+    private int userVerifications(List<User> users, String pwd){
+        // Check if user exists
+        if (users.isEmpty()) {
+            Log.info("User does not exist.");
+            return 1;
+        }
+        
+        // Check if the password is correct
+        if (!users.get(0).pwd().equals(pwd)) {
+            Log.info("Password is incorrect.");
+            return 2;
+        }
+        return 0;
     }
 }

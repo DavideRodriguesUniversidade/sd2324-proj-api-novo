@@ -26,6 +26,7 @@ public class Short {
 
 	public Short() {}
 	
+	//Constructor, getters and setters
 	public Short(String shortId, String ownerId, String blobUrl, long timestamp, int totalLikes) {
 		super();
 		this.shortId = shortId;
