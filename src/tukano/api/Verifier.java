@@ -14,6 +14,7 @@ public class Verifier {
 	
 	public Verifier(){}
 	
+	//Constructor, getters and setters
 	public Verifier(String shortId, String verifier){
 		this.shortId = shortId;
 		this.verifier = verifier;

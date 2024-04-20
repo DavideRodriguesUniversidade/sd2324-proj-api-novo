@@ -4,10 +4,8 @@ import java.net.URI;
 
 import tukano.api.java.Blobs;
 import tukano.clients.rest.RestBlobsClient;
-import tukano.clients.rest.RestShortsClient;
 import tukano.discovery.Discovery;
 import tukano.servers.rest.RestBlobsServer;
-import tukano.servers.rest.RestShortsServer;
 
 public class BlobsClient {
 

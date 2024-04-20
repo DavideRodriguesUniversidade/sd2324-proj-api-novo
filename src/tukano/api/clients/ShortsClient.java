@@ -4,10 +4,8 @@ import java.net.URI;
 
 import tukano.api.java.Shorts;
 import tukano.clients.rest.RestShortsClient;
-import tukano.clients.rest.RestUsersClient;
 import tukano.discovery.Discovery;
 import tukano.servers.rest.RestShortsServer;
-import tukano.servers.rest.RestUsersServer;
 
 public class ShortsClient {
 

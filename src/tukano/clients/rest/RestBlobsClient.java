@@ -1,28 +1,21 @@
 package tukano.clients.rest;
 
-import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import tukano.api.java.Result;
-import tukano.api.java.Users;
 import jakarta.ws.rs.client.Client;
 import tukano.api.rest.RestBlobs;
-import tukano.api.rest.RestShorts;
-import tukano.api.rest.RestUsers;
 import tukano.api.java.Result.ErrorCode;
 import tukano.api.java.Blobs;
 
 import java.net.URI;
-import java.util.logging.Logger;
 
 public class RestBlobsClient extends RestClient implements Blobs {
-    private static Logger Log = Logger.getLogger(RestUsersClient.class.getName());
     
     protected static final int READ_TIMEOUT = 2000;
 	protected static final int CONNECT_TIMEOUT = 2000;
@@ -87,21 +80,6 @@ public class RestBlobsClient extends RestClient implements Blobs {
         return super.reTry( () -> clt_deleteBlob(blobId));
     }    
     
-   /* @Override
-    public Result<Void> downloadToSink(String blobId, Consumer<byte[]> sink) {
-        Response r = target.path(blobId)
-                .request()
-                .get();
-
-        var status = r.getStatus();
-        if (status != Status.OK.getStatusCode()) {
-            return Result.error(getErrorCodeFrom(status));
-        } else {
-            byte[] bytes = r.readEntity(byte[].class);
-            sink.accept(bytes);
-            return Result.ok(null);
-        }
-    }*/
 
     public static ErrorCode getErrorCodeFrom(int status) {
         return switch (status) {

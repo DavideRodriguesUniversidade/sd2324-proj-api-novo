@@ -2,7 +2,6 @@ package tukano.api.clients;
 
 import java.net.URI;
 
-import tukano.api.java.Users;
 import tukano.clients.rest.RestUsersClient;
 import tukano.discovery.Discovery;
 import tukano.servers.rest.RestUsersServer;
